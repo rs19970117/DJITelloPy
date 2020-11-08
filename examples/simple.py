@@ -1,6 +1,6 @@
 from djitellopy import DJITello
 
-tello = Tello()
+tello = DJITello()
 
 tello.connect()
 tello.takeoff()

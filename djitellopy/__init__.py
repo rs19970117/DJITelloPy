@@ -1,2 +1,2 @@
-from .tello import Tello, BackgroundFrameRead
+from .tello import DJITello, BackgroundFrameRead
 from .swarm import TelloSwarm

@@ -14,7 +14,7 @@ drones: Optional[dict] = {}
 client_socket: socket.socket
 
 @enforce_types
-class Tello:
+class DJITello:
     """Python wrapper to interact with the Ryze Tello drone using the official Tello api.
     Tello API documentation:
     [1.3](https://dl-cdn.ryzerobotics.com/downloads/tello/20180910/Tello%20SDK%20Documentation%20EN_1.3.pdf),
@@ -86,7 +86,7 @@ class Tello:
 
         global threads_initialized, drones
 
-        self.address = (host, Tello.CONTROL_UDP_PORT)
+        self.address = (host, DJITello.CONTROL_UDP_PORT)
         self.stream_on = False
         self.retry_count = retry_count
         self.last_received_command_timestamp = time.time()
@@ -94,12 +94,12 @@ class Tello:
 
         if not threads_initialized:
             # Run Tello command responses UDP receiver on background
-            response_receiver_thread = threading.Thread(target=Tello.udp_response_receiver)
+            response_receiver_thread = threading.Thread(target=DJITello.udp_response_receiver)
             response_receiver_thread.daemon = True
             response_receiver_thread.start()
 
             # Run state UDP receiver on background
-            state_receiver_thread = threading.Thread(target=Tello.udp_state_receiver)
+            state_receiver_thread = threading.Thread(target=DJITello.udp_state_receiver)
             state_receiver_thread.daemon = True
             state_receiver_thread.start()
 
@@ -125,14 +125,14 @@ class Tello:
         global client_socket
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        client_socket.bind(('', Tello.CONTROL_UDP_PORT))
+        client_socket.bind(('', DJITello.CONTROL_UDP_PORT))
 
         while True:
             try:
                 data, address = client_socket.recvfrom(1024)
 
                 address = address[0]
-                Tello.LOGGER.debug('Data received from {} at client_socket'.format(address))
+                DJITello.LOGGER.debug('Data received from {} at client_socket'.format(address))
 
                 if address not in drones:
                     continue
@@ -140,7 +140,7 @@ class Tello:
                 drones[address]['responses'].append(data)
 
             except Exception as e:
-                Tello.LOGGER.error(e)
+                DJITello.LOGGER.error(e)
                 break
 
     @staticmethod
@@ -151,23 +151,23 @@ class Tello:
         Internal method, you normally wouldn't call this yourself.
         """
         state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        state_socket.bind(('', Tello.STATE_UDP_PORT))
+        state_socket.bind(('', DJITello.STATE_UDP_PORT))
 
         while True:
             try:
                 data, address = state_socket.recvfrom(1024)
 
                 address = address[0]
-                Tello.LOGGER.debug('Data received from {} at state_socket'.format(address))
+                DJITello.LOGGER.debug('Data received from {} at state_socket'.format(address))
 
                 if address not in drones:
                     continue
 
                 data = data.decode('ASCII')
-                drones[address]['state'] = Tello.parse_state(data)
+                drones[address]['state'] = DJITello.parse_state(data)
 
             except Exception as e:
-                Tello.LOGGER.error(e)
+                DJITello.LOGGER.error(e)
                 break
 
     @staticmethod
@@ -176,7 +176,7 @@ class Tello:
         Internal method, you normally wouldn't call this yourself.
         """
         state = state.strip()
-        Tello.LOGGER.debug('Raw state data: {}'.format(state))
+        DJITello.LOGGER.debug('Raw state data: {}'.format(state))
 
         if state == 'ok':
             return {}
@@ -190,13 +190,13 @@ class Tello:
             key = split[0]
             value = split[1]
 
-            if key in Tello.state_field_converters:
+            if key in DJITello.state_field_converters:
                 try:
-                    value = Tello.state_field_converters[key](value)
+                    value = DJITello.state_field_converters[key](value)
                 except Exception as e:
-                    Tello.LOGGER.debug('Error parsing state value for {}: {} to {}'
-                                       .format(key, value, Tello.state_field_converters[key]))
-                    Tello.LOGGER.error(e)
+                    DJITello.LOGGER.debug('Error parsing state value for {}: {} to {}'
+                                       .format(key, value, DJITello.state_field_converters[key]))
+                    DJITello.LOGGER.error(e)
 
             state_dict[key] = value
 
@@ -222,7 +222,7 @@ class Tello:
 
     def get_mission_pad_id(self) -> int:
         """Mission pad ID of the currently detected mission pad
-        Only available on Tello EDUs after calling enable_mission_pads
+        Only available on DJITello EDUs after calling enable_mission_pads
         Returns:
             int: -1 if none is detected, else 1-8
         """
@@ -832,7 +832,7 @@ class Tello:
             {'pitch': int, 'roll': int, 'yaw': int}
         """
         response = self.send_read_command('attitude?')
-        return Tello.parse_state(response)
+        return DJITello.parse_state(response)
 
     def query_barometer(self) -> int:
         """Get barometer value (cm)
