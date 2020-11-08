@@ -1,4 +1,4 @@
-from djitellopy import Tello
+from djitellopy import DJITello
 
 tello = Tello()
 
